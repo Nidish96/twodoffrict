@@ -43,9 +43,7 @@ function [U, dUdlam, Ss, flag, Scall] = CONTINUE(func, u0, lam0, lam1, ds, varar
                 'adapt', 1, 'arclengthparm', 'orthogonal', 'ITMAX', 20, ...
                 'parmjac', true, ...
         'Dscale', ones(length(u0)+1,1), 'DynDscale', 0, ...
-                'opts', struct('reletol', 1e-6, 'rtol', 1e-6, 'etol', ...
-                              1e-6, 'utol', 1e-6, ...
-                              'Display', false, 'lsrch', 0), ...
+                'opts', optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', false), ...
         'solverchoice', 1, ...
         'callbackfun', [], ...
         'arcsettings', struct());
@@ -62,9 +60,9 @@ function [U, dUdlam, Ss, flag, Scall] = CONTINUE(func, u0, lam0, lam1, ds, varar
         end
     end
   end
-  Copt.opts.lsrch = Copt.lsrch;
-  Copt.opts.Display = Copt.itDisplay;
-  Copt.opts.ITMAX = Copt.ITMAX;  
+  if Copt.itDisplay
+    Copt.opts.Display = 'iter';
+  end
   
   if isequal(Copt.arclengthparm, 'K0NormalizedArcLength')
       % Copy over and initialize parameters specific to this
@@ -104,10 +102,9 @@ function [U, dUdlam, Ss, flag, Scall] = CONTINUE(func, u0, lam0, lam1, ds, varar
   end
   
   %% Correct initial solution
-  Copt.opts.Dscale = Copt.Dscale(1:end-1);
   tm = Copt.opts.Display;
-  Copt.opts.Display = true;
-  [U(1:end-1,1), ~, eflag] = NSOLVE(@(u) func([u; lam0]), u0, Copt.opts);
+  Copt.opts.Display = 'iter';
+  [U(1:end-1,1), ~, eflag] = fsolve(@(u) func([u; lam0]), u0, Copt.opts);
   Copt.opts.Display = tm;
   U(end, 1) = lam0;
   if eflag <= 0
@@ -127,7 +124,6 @@ function [U, dUdlam, Ss, flag, Scall] = CONTINUE(func, u0, lam0, lam1, ds, varar
   else
       Copt.opts.Dscale = Copt.Dscale;
   end
-  
   %% If Parametric jacobian is not supplied
   if ~Copt.parmjac
     ofunc = func;

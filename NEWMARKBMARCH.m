@@ -1,5 +1,5 @@
-function [T, U, Ud, Udd, Fnl] = HHTAMARCH(Ft, U0, Ud0, T, p, varargin)
-%HHTAMARCH Provides the implicit HHTA solution
+function [T, U, Ud, Udd, Fnl] = NEWMARKBMARCH(Ft, U0, Ud0, T, p, varargin)
+%NEWMARKBMARCH Provides the implicit Newmark-Beta March
 %
 %   USAGE:
 %       [T, U, Ud, Udd] = HHTAMARCH(U0, Ft, T, p, opts);

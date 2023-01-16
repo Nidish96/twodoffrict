@@ -14,14 +14,14 @@ nlpars = [1;2];  % [alpha, mu]
 p = struct('M', eye(2), 'C', bt*[0 0;0 1], 'K', [2 -1;-1 2], ...
     'nlpars', nlpars, 'fv', [1;0]*10, 'epN', 1e2);
 
-%% Transient Simulation Using Implicit Acceleration (See HHTAMARCH for modifying parameters)
+%% Transient Simulation Using Implicit Acceleration (See NEWMARKBMARCH for modifying parameters)
 Om = 0.9;
 Ncyc = 50;
 T = 2*pi/Om*Ncyc;
 fsamp = 10;
 
 t = (0:1/fsamp:T);
-[t, ut, udt, uddt, fnlt] = HHTAMARCH(p.fv.*cos(Om*t), zeros(2,1), zeros(2,1), t, p);
+[t, ut, udt, uddt, fnlt] = NEWMARKBMARCH(p.fv.*cos(Om*t), zeros(2,1), zeros(2,1), t, p);
 ut = ut'; udt = udt'; uddt = uddt'; fnlt = fnlt';
 %% HB Simulation
 h = [0 1:2:13];  % Choose harmonics to balance. Ex: h = [0:5];

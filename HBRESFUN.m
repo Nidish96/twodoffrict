@@ -34,25 +34,31 @@ function [R, dRdU, dRdw, Fnl] = HBRESFUN(Uw, Fl, h, Nt, p)
     I = eye(2*Nhc);
     F2 = Fl(2:2:end)-E(2:2:end,:)*Uw(1:end-1) + p.epN*D1*Uw(2:2:end);
     dFdU2 = -E(2:2:end,:) + p.epN*D1*I(2:2:end,:);
+    dFdw2 = -dEdw(2:2:end,:)*Uw(1:end-1) + p.epN*dD1dw*Uw(2:2:end);
 
     f2 = TIMESERIES_DERIV(Nt, h, F2, 0);
     dfdu2 = TIMESERIES_DERIV(Nt, h, dFdU2, 0);
+    dfdw2 = TIMESERIES_DERIV(Nt, h, dFdw2, 0);
 
     % slip update
     dfdu2(abs(f2)>p.nlpars(2), :) = 0;
+    dfdw2(abs(f2)>p.nlpars(2), :) = 0;
     f2(abs(f2)>p.nlpars(2)) = p.nlpars(2)*sign(f2(abs(f2)>p.nlpars(2)));
     
     F2 = GETFOURIERCOEFF(h, f2);
     dFdU2 = GETFOURIERCOEFF(h, dfdu2);
+    dFdw2 = GETFOURIERCOEFF(h, dfdw2);
 
     % Assemble Nonlinear Force
     Fnl = reshape([F1 F2]', 2*Nhc, 1);
     Jnl = zeros(2*Nhc);
     Jnl(1:2:end, 1:2:end) = dFdU1;
     Jnl(2:2:end, :) = dFdU2;
+    dFnldw = zeros(2*Nhc,1);
+    dFnldw(2:2:end) = dFdw2;
 
     % Construct Residual
     R = E*Uw(1:end-1) + Fnl - Fl;
     dRdU = E + Jnl;
-    dRdw = dEdw*Uw(1:end-1);
+    dRdw = dEdw*Uw(1:end-1) + dFnldw;
 end
