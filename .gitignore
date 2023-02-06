@@ -1,2 +1,10 @@
 *.asv
 *~
+*gz
+*toc
+*fls
+*log
+*aux
+*el
+*fdb_latexmk
+*fls

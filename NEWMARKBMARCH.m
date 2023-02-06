@@ -1,4 +1,4 @@
-function [T, U, Ud, Udd, Fnl] = NEWMARKBMARCH(Ft, U0, Ud0, T, p, varargin)
+function [T, U, Ud, Udd, Fnl] = NEWMARKBMARCH(Ft, U0, Ud0, T, p, epN, varargin)
 %NEWMARKBMARCH Provides the implicit Newmark-Beta March
 %
 %   USAGE:
@@ -40,6 +40,7 @@ function [T, U, Ud, Udd, Fnl] = NEWMARKBMARCH(Ft, U0, Ud0, T, p, varargin)
 
     opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, 'Display', 'off');
     Uddg = Udd(:,1);
+    p.epN = epN;
     for ti=2:Nt
         Udd(:,ti) = fsolve(@(udd) TRESFUN(udd, Ft(:,ti), dt, p, b, g, ...
             U(:,ti-1), Ud(:, ti-1), Udd(:, ti-1), Fnl(:, ti-1), Ft(:, ti-1)), ...
@@ -74,20 +75,36 @@ function [R, dRdUdd, U, Ud, Fnl] = TRESFUN(Udd, Fex, dt, p, b, g, varargin)
     U  = Up + dt*Udp + dt^2/2*((1-2*b)*Uddp+2*b*Udd);
     Ud = Udp+ dt*((1-g)*Uddp+g*Udd);
 
-    Fnl = [p.nlpars(1)*U(1)^3; 0];
-    Jnl = [3*p.nlpars(1)*U(1)^2*(dt^2*b) 0;0 0]; 
+    Fnl = [p.nlpars(1)*U(1)^3; p.nlpars(2)*Ud(2)^3];
+    Jnl = [3*p.nlpars(1)*U(1)^2*(dt^2*b) 0;
+        0 3*p.nlpars(2)*Ud(2)^2*(dt*g)]; 
 
     R = Z1*Udd + Z2*Uddp + Z3*Udp + (Fnl-Fnlp) - (Fex-Fexp);
     dRdUdd = Z1 + Jnl;
 
     % Correct friction element
-    if abs(-R(2)+p.epN*Ud(2))<p.nlpars(2)
-        Fnl(2) = -R(2)+p.epN*Ud(2);
-        Jnl(2,:) = -dRdUdd(2,:) + p.epN*[0 1]*dt*g;
-    else
-        Fnl(2) = p.nlpars(2)*sign(-R(2)+p.epN*Ud(2));
-        Jnl(2,:) = 0;
+    if isinf(p.kt)  % rigid coulomb
+        if abs(-R(2)+p.epN*Ud(2))<p.nlpars(3)
+            fric = -R(2)+p.epN*Ud(2);
+            dfric = -dRdUdd(2,:) + p.epN*[0 1]*(dt*g);
+        else
+            fric = p.nlpars(3)*sign(-R(2)+p.epN*Ud(2));
+            dfric = 0;
+        end
+    else  % elastic dry friction
+        fsp = p.kt*(U(2)-Up(2)) + Fnlp(2);
+        dfsp = p.kt*(dt^2*b);
+
+        if abs(fsp)<p.nlpars(3)
+            fric = fsp;
+            dfric = [0 dfsp];
+        else
+            fric = p.nlpars(3)*sign(fsp);
+            dfric = [0 0];
+        end
     end
+    Fnl(2) = Fnl(2)+fric;
+    Jnl(2,:) = Jnl(2,:)+dfric;
 
     R = Z1*Udd + Z2*Uddp + Z3*Udp + (Fnl-Fnlp) - (Fex-Fexp);
     dRdUdd = Z1 + Jnl;
