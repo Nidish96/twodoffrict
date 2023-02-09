@@ -107,6 +107,15 @@ else
     UxwC = CONTINUE(@(Uxwa) EPMCRESFUN(Uxwa,Fl,h,Nt,p,epN), Uxws, As, Ae, da, Copt);
 end
 
+%% Save Force Harmonics
+Fnls = zeros(Nhc*2, size(UxwC,2));
+Fts = zeros(Nt, size(UxwC,2)+1, 2);
+for ia=1:size(UxwC,2)
+    [~, ~, ~, Fnls(:,ia)] = EPMCRESFUN(UxwC(:,ia),Fl,h,Nt,p,epN);
+end
+Fts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Fnls(1:2:end,:)], 0);
+Fts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Fnls(2:2:end,:)], 0);
+
 %% Invariant Manifold
 uts = zeros(Nt, size(UxwC,2)+1, 2);
 uts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(1:2:end-3,:)], 0).*[0 10.^UxwC(end-1,:)];
@@ -114,7 +123,7 @@ uts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(2:2:end-3,:)], 0).*[0 10
 
 udts = zeros(Nt, size(UxwC,2)+1, 2);
 udts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(1:2:end-3,:)], 1).*[0 UxwC(end-1,:).*(10.^UxwC(end-1,:))];
-udts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(2:2:end-3,:)], 1).*[0 UxwC(end-1,:).*(10.^UxwC(end-1,:))];
+udts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(2:2:end-3,:)], 1).*[0 UxwC(end-1,:).*(10.^UxwC(end-1,:))];
 
 Phis = [1 1;1 -1]/sqrt(2);  % Mode shapes used by Prof. Quinn
 qts = zeros(Nt, size(UxwC,2)+1, 2);
@@ -224,4 +233,4 @@ if savfig
     export_fig(sprintf('./FIGS/C_EPMCIM_%d_P%d_eh.png', h(end), nlpi), '-dpng');
 end
 
-save(sprintf('./DATS/C_EPMC_nh%d_P%d.mat', h(end), nlpi), 'qts', 'qdts', 'UxwC');
+save(sprintf('./DATS/C_EPMC_nh%d_P%d.mat', h(end), nlpi), 'uts', 'udts', 'qts', 'qdts', 'UxwC', 'Fnls', 'Fts');
