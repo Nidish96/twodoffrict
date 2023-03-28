@@ -9,9 +9,9 @@ set(0,'defaultTextInterpreter','latex');
 set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13);
 
-savfig = true;
+savfig = false;
 %% Parameters
-bt = 0.1;
+bt = 0.001;  % 0.1
 nlpars = [1;0;0.5];  % [alpha; delta; muN]
 p = struct('M', eye(2), 'C', bt*[0 0;0 1], 'K', [2 -1;-1 2], ...
     'nlpars', nlpars, 'fv', [1;0]*10, 'kt', inf);  % set kt to inf for rigid coulomb
