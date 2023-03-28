@@ -6,7 +6,7 @@ set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13);
 
 % Load Data
-load('./DATS/C_EPMC_nh33_P5.mat', 'uts', 'udts', 'qts', 'qdts', 'UxwC', 'Fts');
+load('./F_FAPP_nh33_P5.mat', 'UwfC', 'Fnls', 'Fts');
 h = 1:2:33;
 Nt = 1024;
 t = linspace(0, 2*pi, Nt+1);  t = t(1:Nt)';
@@ -15,53 +15,48 @@ Nhc = sum((h==0)+2*(h~=0));
 
 %% Compute Invariant Manifold
 Phis = [1 1;1 -1]/sqrt(2);  % Mode shapes used by Prof. Quinn
-U1 = UxwC(1:2:end-3,:).*10.^UxwC(end,:);                           U2 = UxwC(2:2:end-3,:).*10.^UxwC(end,:);
-Q1 = kron(eye(Nhc), Phis(:,1)')*UxwC(1:end-3,:).*10.^UxwC(end,:);  Q2 = kron(eye(Nhc), Phis(:,2)')*UxwC(1:end-3,:).*10.^UxwC(end,:);
+U1 = UwfC(1:2:end-2,:).*10.^UwfC(end,:);                           U2 = UwfC(2:2:end-2,:).*10.^UwfC(end,:);
+Q1 = kron(eye(Nhc), Phis(:,1)')*UwfC(1:end-2,:).*10.^UwfC(end,:);  Q2 = kron(eye(Nhc), Phis(:,2)')*UwfC(1:end-2,:).*10.^UwfC(end,:);
 
-uts = zeros(Nt, size(UxwC,2)+1, 2);
+uts = zeros(Nt, size(UwfC,2)+1, 2);
 uts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U1], 0);
 uts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U2], 0);
 
-udts = zeros(Nt, size(UxwC,2)+1, 2);
+udts = zeros(Nt, size(UwfC,2)+1, 2);
 udts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U1], 1);
 udts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U2], 1);
 
-qts = zeros(Nt, size(UxwC,2)+1, 2);
+qts = zeros(Nt, size(UwfC,2)+1, 2);
 qts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q1], 0);
 qts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q2], 0);
 
-qdts = zeros(Nt, size(UxwC,2)+1, 2);
-qdts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q1], 1);
-qdts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q2], 1);
+qdts = zeros(Nt, size(UwfC,2)+1, 2);
+qdts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q1], 1).*[0 UwfC(end-1,:)];
+qdts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q2], 1).*[0 UwfC(end-1,:)];
 
-%%
-largs = {'-', 'LineWidth', 2};
+%% Plots
+largs = {'o-', 'LineWidth', 2};
 
-[~, ki] = max(UxwC(end-1,:));  % point of max frequency
-% ki = find(UxwC(end-2,:)./(2*UxwC(end-1,:))<1, 1 );  % find point when this mode becomes underdamped
-ki = ki+20;
+[~, ki] = max(UwfC(end-1,:));  % point of max frequency
+ki = max(ki-1, 1);
+% [~,ki] = findpeaks(-vecnorm(Q1));  % Dipping point in Q1
+% ki = ki+2;
 
 figure(1)
 clf()
-subplot(2,1,1)
-semilogx(10.^UxwC(end,:), UxwC(end-1,:), largs{:}); hold on
-semilogx(10.^UxwC(end,ki-1), UxwC(end-1,ki-1), 'ro', 'MarkerFaceColor', 'r'); hold on
+semilogx(10.^UwfC(end,:), UwfC(end-1,:), largs{:}); hold on
+semilogx(10.^UwfC(end,ki), UwfC(end-1,ki), 'ro', 'MarkerFaceColor', 'r'); hold on
 ylabel('Frequency (rad/s)')
-ax = axes('Position', [0.575 0.65 0.3 0.15]);
-semilogx(10.^UxwC(end,:), UxwC(end-1,:), largs{:}); hold on
-semilogx(10.^UxwC(end,ki-1), UxwC(end-1,ki-1), 'ro', 'MarkerFaceColor', 'r'); hold on
-xlim(10.^UxwC(end,[ki-1 end]))
 
-subplot(2,1,2)
-semilogx(10.^UxwC(end,:), UxwC(end-2,:)./(2*UxwC(end-1,:))*100, largs{:}); hold on
-semilogx(10.^UxwC(end,ki-1), UxwC(end-2,ki-1)./(2*UxwC(end-1,ki-1))*100, 'ro', 'MarkerFaceColor', 'r'); hold on
-ylabel('Eff. Damping (\%)')
-xlabel('Modal Amplitude $q_1$')
-ax = axes('Position', [0.575 0.25 0.3 0.15]);
-semilogx(10.^UxwC(end,:), UxwC(end-2,:)./(2*UxwC(end-1,:))*100, largs{:}); hold on
-semilogx(10.^UxwC(end,ki-1), UxwC(end-2,ki-1)./(2*UxwC(end-1,ki-1))*100, 'ro', 'MarkerFaceColor', 'r'); hold on
-xlim(10.^UxwC(end,[ki-1 end]))
+yyaxis right
+loglog(10.^UwfC(end,:), vecnorm(Q1), largs{:})
+loglog(10.^UwfC(end,ki), vecnorm(Q1(:,ki)), 'ro', 'MarkerFaceColor', 'r')
+set(gca, 'YScale', 'log')
+ylabel('Amplitude Q1')
+
+xlabel('Forcing Amplitude (N)')
 set(gcf, 'Color', 'white')
+grid on
 
 figure(2)
 clf()
@@ -75,8 +70,8 @@ grid on
 set(gcf, 'Color', 'white')
 set(gca, 'View', [15 5])
 
-% kmax = size(UxwC,2); % MODIFY THIS TO CONTROL THE MAX AMPLITUDE TO PLOT
-kmax = ki + 10;
+% kmax = size(UwfC,2); % MODIFY THIS TO CONTROL THE MAX AMPLITUDE TO PLOT
+kmax = min(ki + 25, size(UwfC,2));
 figure(3)
 clf()
 surf(qts([1:end 1],ki:kmax,1), qdts([1:end 1],ki:kmax,1), qts([1:end 1],ki:kmax,2), 'EdgeColor', 'none'); hold on

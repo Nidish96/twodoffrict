@@ -52,23 +52,26 @@ Fl(rinds(1)) = 1;
 
 % Fully stuck initial guess
 U0 = zeros(2*Nhc, 1);
-U0([rinds(1:2) iinds(1:2)]) = repmat(Vst,2,1)/sqrt(2);
+% U0([rinds(1:2) iinds(1:2)]) = repmat(Vst,2,1)/sqrt(2);
+U0(iinds(1:2)) = Vst;
 Uxw0 = [U0;Vst'*p.C*Vst;Wst];
 
 if nlpi==5  % Slipped initial guess
-    U0([rinds(1:2) iinds(1:2)]) = repmat(V(:,1),2,1)/sqrt(2);
+%     U0([rinds(1:2) iinds(1:2)]) = repmat(V(:,1),2,1)/sqrt(2);
+    U0(iinds(1:2)) = V(:,1);
     Uxw0 = [U0;V(:,1)'*p.C*V(:,1);Wsr(1)];
 end
 
 opt = optimoptions('fsolve', 'SpecifyObjectiveGradient', true, ...
     'Display', 'iter', 'CheckGradients', false);
 As = -2;
-Ae = 1;
+Ae = 4;
 if nlpi==5
     Uxws = fsolve(@(Uxw) EPMCRESFUN([Uxw; Ae], Fl, h, Nt, p, epN), Uxw0, opt);
 else
     Uxws = fsolve(@(Uxw) EPMCRESFUN([Uxw; As], Fl, h, Nt, p, epN), Uxw0, opt);
 end
+Uxws(1:4)
 
 Ctran = zeros(length(h), Nhc);
 [ci0,cin,hi0,hic,his] = HINDS(1,h);
@@ -117,22 +120,25 @@ Fts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Fnls(1:2:end,:)], 0);
 Fts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Fnls(2:2:end,:)], 0);
 
 %% Invariant Manifold
+Phis = [1 1;1 -1]/sqrt(2);  % Mode shapes used by Prof. Quinn
+U1 = UxwC(1:2:end-3,:).*10.^UxwC(end,:);                           U2 = UxwC(2:2:end-3,:).*10.^UxwC(end,:);
+Q1 = kron(eye(Nhc), Phis(:,1)')*UxwC(1:end-3,:).*10.^UxwC(end,:);  Q2 = kron(eye(Nhc), Phis(:,2)')*UxwC(1:end-3,:).*10.^UxwC(end,:);
+
 uts = zeros(Nt, size(UxwC,2)+1, 2);
-uts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(1:2:end-3,:)], 0).*[0 10.^UxwC(end-1,:)];
-uts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(2:2:end-3,:)], 0).*[0 10.^UxwC(end-1,:)];
+uts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U1], 0);
+uts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U2], 0);
 
 udts = zeros(Nt, size(UxwC,2)+1, 2);
-udts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(1:2:end-3,:)], 1).*[0 UxwC(end-1,:).*(10.^UxwC(end-1,:))];
-udts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) UxwC(2:2:end-3,:)], 1).*[0 UxwC(end-1,:).*(10.^UxwC(end-1,:))];
+udts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U1], 1);
+udts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) U2], 1);
 
-Phis = [1 1;1 -1]/sqrt(2);  % Mode shapes used by Prof. Quinn
 qts = zeros(Nt, size(UxwC,2)+1, 2);
-qts(:,:,1) = Phis(1,1)*uts(:,:,1)+Phis(2,1)*uts(:,:,2);
-qts(:,:,2) = Phis(1,2)*uts(:,:,1)+Phis(2,2)*uts(:,:,2);
+qts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q1], 0);
+qts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q2], 0);
 
 qdts = zeros(Nt, size(UxwC,2)+1, 2);
-qdts(:,:,1) = Phis(1,1)*udts(:,:,1)+Phis(2,1)*udts(:,:,2);
-qdts(:,:,2) = Phis(1,2)*udts(:,:,1)+Phis(2,2)*udts(:,:,2);
+qdts(:,:,1) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q1], 1);
+qdts(:,:,2) = TIMESERIES_DERIV(Nt, h, [zeros(Nhc,1) Q2], 1);
 
 %% 
 largs = {'-', 'LineWidth', 2};
@@ -233,4 +239,5 @@ if savfig
     export_fig(sprintf('./FIGS/C_EPMCIM_%d_P%d_eh.png', h(end), nlpi), '-dpng');
 end
 
+%%
 save(sprintf('./DATS/C_EPMC_nh%d_P%d.mat', h(end), nlpi), 'uts', 'udts', 'qts', 'qdts', 'UxwC', 'Fnls', 'Fts');
