@@ -6,7 +6,7 @@ set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13);
 
 % Load Data
-load('./F_FAPP_nh33_P5.mat', 'UwfC', 'Fnls', 'Fts');
+load('./DATS/F_FAPP_nh33_P5.mat', 'UwfC', 'Fnls', 'Fts');
 h = 1:2:33;
 Nt = 1024;
 t = linspace(0, 2*pi, Nt+1);  t = t(1:Nt)';

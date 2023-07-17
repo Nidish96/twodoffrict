@@ -9,7 +9,7 @@ set(0,'defaultTextInterpreter','latex');
 set(0, 'DefaultLegendInterpreter', 'latex');
 set(0,'defaultAxesFontSize',13);
 
-savfig = true;
+savfig = false;
 %% Parameters
 bt = 0.1;
 % [alpha, gamma, mu]
